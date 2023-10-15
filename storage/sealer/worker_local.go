@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -514,10 +513,14 @@ func (l *LocalWorker) ReleaseUnsealed(ctx context.Context, sector storiface.Sect
 			return nil, xerrors.Errorf("finalizing sector: %w", err)
 		}
 
-		if len(keepUnsealed) == 0 {
-			if err := l.storage.Remove(ctx, sector.ID, storiface.FTUnsealed, true, nil); err != nil {
-				return nil, xerrors.Errorf("removing unsealed data: %w", err)
-			}
+		//if len(keepUnsealed) == 0 {
+		//	if err := l.storage.Remove(ctx, sector.ID, storiface.FTUnsealed, true, nil); err != nil {
+		//		return nil, xerrors.Errorf("removing unsealed data: %w", err)
+		//	}
+		//}
+
+		if err := l.storage.Remove(ctx, sector.ID, storiface.FTUnsealed, true, nil); err != nil {
+			return nil, xerrors.Errorf("removing unsealed data: %w", err)
 		}
 
 		return nil, err
@@ -796,11 +799,6 @@ func (l *LocalWorker) Info(context.Context) (storiface.WorkerInfo, error) {
 		log.Errorf("getting gpu devices failed: %+v", err)
 	}
 
-	memPhysical, memUsed, memSwap, memSwapUsed, err := l.memInfo()
-	if err != nil {
-		return storiface.WorkerInfo{}, xerrors.Errorf("getting memory info: %w", err)
-	}
-
 	resEnv, err := storiface.ParseResourceEnv(func(key, def string) (string, bool) {
 		return l.envLookup(key)
 	})
@@ -812,11 +810,11 @@ func (l *LocalWorker) Info(context.Context) (storiface.WorkerInfo, error) {
 		Hostname:        l.name,
 		IgnoreResources: l.ignoreResources,
 		Resources: storiface.WorkerResources{
-			MemPhysical: memPhysical,
-			MemUsed:     memUsed,
-			MemSwap:     memSwap,
-			MemSwapUsed: memSwapUsed,
-			CPUs:        uint64(runtime.NumCPU()),
+			MemPhysical: 1099511627776,
+			MemUsed:     0,
+			MemSwap:     0,
+			MemSwapUsed: 0,
+			CPUs:        64,
 			GPUs:        gpus,
 			Resources:   resEnv,
 		},
